@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: feedback
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required) - UID of the user
+    //   - rating: number (required, 1-5) - User rating
+    //   - comment: string (optional, max 500 chars) - User comment
+    //   - device: string (required) - Device info
+    //   - os: string (required) - OS info
+    //   - createdAt: timestamp (required) - Creation time
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidFeedback(data) {
+      return data.keys().hasAll(['userId', 'rating', 'device', 'os', 'createdAt']) &&
+             data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.rating is number &&
+             data.rating >= 1 && data.rating <= 5 &&
+             data.device is string && data.device.size() > 0 && data.device.size() < 100 &&
+             data.os is string && (data.os == 'Android' || data.os == 'iOS') &&
+             data.createdAt == request.time &&
+             (!('comment' in data) || (data.comment is string && data.comment.size() <= 500));
+    }
+
+    match /feedback/{feedbackId} {
+      // Allow authenticated users to submit feedback
+      allow create: if isAuthenticated() && isValidFeedback(request.resource.data);
+      
+      // Users can read their own feedback (optional, but safe)
+      allow read: if isOwner(resource.data.userId);
+      
+      // No updates or deletes allowed for users
+      allow update, delete: if false;
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

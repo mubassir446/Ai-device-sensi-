@@ -1,0 +1,24 @@
+{
+  "entities": {
+    "Feedback": {
+      "title": "User Feedback",
+      "description": "Feedback from users about the generated sensitivity settings.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who provided the feedback." },
+        "rating": { "type": "number", "description": "Rating from 1 to 5." },
+        "comment": { "type": "string", "description": "User's comment." },
+        "device": { "type": "string", "description": "The device brand and model." },
+        "os": { "type": "string", "description": "The OS of the device." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the feedback was created." }
+      },
+      "required": ["rating", "device", "os", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "Collection of user feedback."
+    }
+  }
+}
